@@ -1,0 +1,4 @@
+todoapp/
+__pycache__/
+*.pyc
+*.cfg
