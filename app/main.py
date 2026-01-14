@@ -1,5 +1,7 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
+from typing import Optional
 from . import crud, models, schemas
 from .database import engine, SessionLocal, Base
 # from .crud import create_task, get_tasks
@@ -20,9 +22,11 @@ def get_db():
     finally:
         db.close()
 
+
 @app.get("/")
 async def root(db: Session = Depends(get_db)):
     return {"message": "🎉 FastAPI ToDo App Working!", "status": "ready"}
+
 
 # CRUD ENDPOINTS
 @app.post("/tasks/", response_model=schemas.Task)
@@ -31,8 +35,25 @@ async def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/tasks/", response_model=list[schemas.Task])
-async def get_tasks(db: Session = Depends(get_db), skip: int = 0, limit: int = 100):
-    tasks = db.query(models.Task).offset(skip).limit(limit).all()
+async def get_tasks(db: Session = Depends(get_db),
+                    skip: int = 0,
+                    limit: int = 100,
+                    completed: Optional[bool] = Query(None),
+                    search: Optional[str] = Query(None),
+                    min_priority: Optional[int] = Query(None)):
+    query = db.query(models.Task)
+
+    if completed is not None:
+        query = query.filter(models.Task.completed == completed)
+    if search:
+        like = f"%{search}%"
+        query = query.filter(
+            models.Task.title.ilike(like) | models.Task.description.ilike(like)
+        )
+    if min_priority is not None:
+        query = query.filter(models.Task.priority >= min_priority)
+    
+    tasks = query.offset(skip).limit(limit).all()
     return tasks
 
 @app.get("/tasks/{task_id}", response_model=schemas.Task)
@@ -65,3 +86,8 @@ async def delete_task(task_id: int, db: Session = Depends(get_db)):
     db.delete(db_task)
     db.commit()
     return {"message": "Task deleted"}
+
+
+@app.get("/ui", response_class=HTMLResponse)
+async def ui_home():
+    return "<h1>Todo UI coming soon</h1>"
