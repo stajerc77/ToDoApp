@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>My Tasks</h1>
+
+<!-- Add Task Form -->
+<form method="POST" action="/tasks/new">
+    <div class="mb-3">
+        <input type="text" class="form-control" name="title" placeholder="Task title" required>
+    </div>
+    <button class="btn btn-primary" type="submit">Add Task</button>
+</form>
+
+<!-- Task List -->
+<h3>Tasks ({{ tasks|length }})</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for task in tasks %}
+        <tr>
+            <td>{{ task.title }}</td>
+            <td>{{ task.priority }}</td>
+            <td>
+                {% if task.completed %}
+                    <span class="badge bg-success">Done</span>
+                {% else %}
+                    <span class="badge bg-warning">Pending</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="/tasks/{{ task.id }}/edit" class="btn btn-sm btn-outline-primary">Edit</a>
+                <a href="/tasks/{{ task.id }}/delete" class="btn btn-sm btn-outline-danger">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
