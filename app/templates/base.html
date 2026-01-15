@@ -6,7 +6,9 @@
 </head>
 <body>
     <div class="container mt-4">
-        {% block content %}{% endblock %}
+        {% block content %}
+        {% set today = today if today else date.today() %}
+        {% endblock %}
     </div>
 </body>
 </html>

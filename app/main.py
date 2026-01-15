@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from fastapi import FastAPI, Depends, HTTPException, Query, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -28,8 +29,11 @@ def get_db():
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request, db: Session = Depends(get_db)):
-    tasks = db.query(models.Task).all()
-    return templates.TemplateResponse("index.html", {"request": request, "tasks": tasks})
+    tasks = db.query(models.Task).order_by(models.Task.priority.desc(), models.Task.due_date).all()
+
+    for task in tasks:
+        task.is_overdue = task.due_date and task.due_date.date() < date.today() if task.due_date else False
+    return templates.TemplateResponse("index.html", {"request": request, "tasks": tasks, "today": date.today()})
 
 
 # CRUD ENDPOINTS
@@ -98,9 +102,19 @@ async def home(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse("index.html", {"request": request, "tasks": tasks})
 
 @app.post("/tasks/new")
-async def add_task(title: str = Form(...), db: Session = Depends(get_db)):
-    task = schemas.TaskCreate(title=title)
-    crud.create_task(db, task)
+async def add_task(title: str = Form(...),
+                   priority: Optional[int] = Form(1),
+                   description: Optional[str] = Form(None),
+                   due_date: Optional[str] = Form(None),
+                   db: Session = Depends(get_db)
+                   ):
+    task_data = schemas.TaskCreate(
+        title=title,
+        priority=priority,
+        description=description,
+        due_date=datetime.fromisoformat(due_date) if due_date else None
+    )
+    crud.create_task(db, task_data)
     return RedirectResponse(url="/", status_code=303)
 
 @app.post("/tasks/{task_id}/delete")
@@ -119,10 +133,33 @@ async def edit_form(task_id: int, request: Request, db: Session = Depends(get_db
         return RedirectResponse(url="/", status_code=303)
     return templates.TemplateResponse("edit.html", {"request": request, "task": task})
 
+
 @app.post("/tasks/{task_id}/update")
-async def update_task(task_id: int, title: str = Form(...), db: Session = Depends(get_db)):
+async def update_task_page(
+    task_id: int,
+    title: str = Form(...),
+    priority: Optional[int] = Form(1),
+    description: Optional[str] = Form(None),
+    due_date: Optional[str] = Form(None),
+    completed: Optional[bool] = Form(False),
+    db: Session = Depends(get_db)
+):
     task = db.query(models.Task).filter(models.Task.id == task_id).first()
     if task:
         task.title = title
+        task.priority = priority
+        task.description = description
+        if due_date:
+            task.due_date = datetime.fromisoformat(due_date + ":00") if due_date else None
+        task.completed = completed
+        db.commit()
+    return RedirectResponse("/", status_code=303)
+
+
+@app.post("/tasks/{task_id}/toggle")
+async def toggle_task_status(task_id: int, db: Session = Depends(get_db)):
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if task:
+        task.completed = not task.completed
         db.commit()
     return RedirectResponse(url="/", status_code=303)

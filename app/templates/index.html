@@ -3,13 +3,37 @@
 {% block content %}
 <h1>My Tasks</h1>
 
-<!-- Add Task Form -->
-<form method="POST" action="/tasks/new">
-    <div class="mb-3">
-        <input type="text" class="form-control" name="title" placeholder="Task title" required>
+<!--Task Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Add New Task</h5>
+        <form method="POST" action="/tasks/new">
+            <div class="row">
+                <div class="col-md-8">
+                    <input type="text" class="form-control mb-2" name="title" placeholder="Task title" required>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-control mb-2" name="priority">
+                        <option value="1">Priority 1</option>
+                        <option value="2" selected>Priority 2</option>
+                        <option value="3">Priority 3</option>
+                        <option value="4">Priority 4</option>
+                        <option value="5">Priority 5</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-8">
+                    <input type="text" class="form-control mb-2" name="description" placeholder="Description (optional)">
+                </div>
+                <div class="col-md-4">
+                    <input type="date" class="form-control mb-2" name="due_date">
+                </div>
+            </div>
+            <button class="btn btn-primary" type="submit">Add Task</button>
+        </form>
     </div>
-    <button class="btn btn-primary" type="submit">Add Task</button>
-</form>
+</div>
 
 <!-- Task List -->
 <h3>Tasks ({{ tasks|length }})</h3>
@@ -19,24 +43,50 @@
             <th>Title</th>
             <th>Priority</th>
             <th>Status</th>
+            <th>Due Date</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         {% for task in tasks %}
         <tr>
-            <td>{{ task.title }}</td>
-            <td>{{ task.priority }}</td>
             <td>
-                {% if task.completed %}
-                    <span class="badge bg-success">Done</span>
-                {% else %}
-                    <span class="badge bg-warning">Pending</span>
+                <strong>{{ task.title }}</strong>
+                {% if task.description %}
+                    <br><small class="text-muted">{{task.description}}</small>
                 {% endif %}
             </td>
             <td>
+                <span class="badge bg-{{ 'danger' if task.priority >= 4 else 'warning' if task.priority >= 3 else 'info' }}">{{ task.priority }}
+                </span>
+            </td>
+            <td>
+                {% if task.completed %}
+                    <span class="badge bg-success">Completed</span>
+                {% elif task.priority >= 3 %}
+                    <span class="badge bg-warning">In Progress</span>
+                {% else %}
+                    <span class="badge bg-secondary">Pending</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if task.due_date %}
+                    {{ task.due_date.strftime('%Y-%m-%d') }}
+                    {% if task.is_overdue %}
+                        <span class="badge bg-danger ms-1">Overdue</span>
+                    {% endif %}
+                {% else %}
+                    <span class="text-muted">No due date</span>
+                {% endif %}
+            </td>
+            <td>
+                <form method="POST" action="/tasks/{{ task.id }}/toggle" style="display: inline;">
+                    <button type="submit" class="btn btn-sm btn-outline-{{ 'secondary' if task.completed else 'success' }}">
+                        {{ 'Undo' if task.completed else 'Mark Done' }}
+                    </button>
+                </form>
                 <a href="/tasks/{{ task.id }}/edit" class="btn btn-sm btn-outline-primary me-1">Edit</a>
-                <form method="POST" action="/tasks/{{ task.id }}/delete" style="display: inline;">
+                <form method="POST" action="/tasks/{{ task.id }}/delete" style="display: inline; margin-left: 5px;">
                 <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')">Delete</button>
                 </form>
             </td>
