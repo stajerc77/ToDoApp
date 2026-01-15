@@ -43,6 +43,7 @@
             <th>Title</th>
             <th>Priority</th>
             <th>Status</th>
+            <th>Start Date</th>
             <th>Due Date</th>
             <th>Actions</th>
         </tr>
@@ -70,13 +71,19 @@
                 {% endif %}
             </td>
             <td>
-                {% if task.due_date %}
-                    {{ task.due_date.strftime('%Y-%m-%d') }}
-                    {% if task.is_overdue %}
-                        <span class="badge bg-danger ms-1">Overdue</span>
-                    {% endif %}
+                {% if task.created_at %}
+                    {{ task.created_at.strftime('%m/%d') }}
                 {% else %}
-                    <span class="text-muted">No due date</span>
+                    No Start Date
+                {% endif %}
+            </td>
+            <td>
+                {% if task.due_date %}
+                    {{ task.due_date.strftime('%m/%d') }}
+                    {% if task.is_overdue %}<span class="badge bg-danger ms-1">Overdue</span>
+                {% endif %}
+                {% else %}
+                    No dates
                 {% endif %}
             </td>
             <td>
