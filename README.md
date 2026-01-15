@@ -34,6 +34,7 @@ pip install -r requirements.txt
 
 ## Project Structure
 
+```bash
 todo-app/
 ├── app/
 │   ├── __init__.py
@@ -45,6 +46,7 @@ todo-app/
 │       └── index.html
 ├── requirements.txt
 └── todo.db             # SQLite database
+```
 
 ## Usage
 
